@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公众号排版工具 - 太原事编通</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+        
+        .header {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 28px 20px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .header h1 { font-size: 24px; margin-bottom: 6px; font-weight: 700; letter-spacing: 1px; }
+        .header p { font-size: 13px; opacity: 0.9; }
+        
+        .template-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .template-section h2 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .template-btn {
+            padding: 12px 8px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .template-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--btn-color, #667eea);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .template-btn:hover { border-color: #667eea; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .template-btn:hover::before { opacity: 1; }
+        .template-btn.active { border-color: #667eea; background: #f8f7ff; box-shadow: 0 4px 16px rgba(102,126,234,0.2); }
+        .template-btn.active::before { opacity: 1; }
+        .template-btn .icon { font-size: 24px; margin-bottom: 4px; }
+        .template-btn .name { color: #333; font-weight: 600; font-size: 13px; }
+        .template-btn .desc { color: #999; font-size: 11px; margin-top: 2px; }
+        
+        .category-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .category-tab {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .category-tab:hover { border-color: #667eea; }
+        .category-tab.active { background: #667eea; color: white; border-color: #667eea; }
+        
+        .editor-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .editor-section h2 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .markdown-input {
+            width: 100%;
+            min-height: 240px;
+            padding: 14px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            font-family: "SF Mono", Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+        .markdown-input:focus { outline: none; border-color: #667eea; }
+        
+        .preview-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .preview-header h2 {
+            font-size: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .copy-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+        .copy-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .copy-btn.copied { background: linear-gradient(135deg, #34a853 0%, #2d8f47 100%); }
+        
+        #previewContent {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 200px;
+            line-height: 1.8;
+            color: #000;
+            font-size: 15px;
+        }
+        
+        .tips {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 16px;
+            padding: 16px;
+            color: #5a3e28;
+        }
+        .tips h3 { font-size: 13px; margin-bottom: 8px; }
+        .tips ul { font-size: 12px; padding-left: 16px; }
+        .tips li { margin-bottom: 3px; }
+        
+        @media (max-width: 600px) {
+            .template-grid { grid-template-columns: repeat(3, 1fr); }
+            .container { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 公众号排版工具</h1>
+            <p>太原事编通 - 选择模板 · 粘贴内容 · 一键复制</p>
+        </div>
+        
+        <div class="template-section">
+            <h2>🎨 选择模板</h2>
+            <div class="category-tabs">
+                <button class="category-tab active" onclick="filterCategory('all', this)">全部</button>
+                <button class="category-tab" onclick="filterCategory('premium', this)">💎 高级模板</button>
+                <button class="category-tab" onclick="filterCategory('official', this)">政务公告</button>
+                <button class="category-tab" onclick="filterCategory('recruit', this)">招聘求职</button>
+            </div>
+            <div class="template-grid" id="templateGrid">
+            </div>
+        </div>
+        
+        <div class="editor-section">
+            <h2>📝 粘贴你的内容</h2>
+            <textarea id="markdownInput" class="markdown-input" placeholder="在这里粘贴你的 Markdown 内容..."></textarea>
+        </div>
+        
+        <div class="preview-section">
+            <div class="preview-header">
+                <h2>👁️ 预览效果</h2>
+                <button class="copy-btn" onclick="copyContent()">📋 一键复制到公众号</button>
+            </div>
+            <div id="previewContent"></div>
+        </div>
+        
+        <div class="tips">
+            <h3>💡 使用方法</h3>
+            <ul>
+                <li><strong>第1步</strong>：选择适合内容的模板</li>
+                <li><strong>第2步</strong>：粘贴 Markdown 格式内容</li>
+                <li><strong>第3步</strong>：预览效果，确认无误</li>
+                <li><strong>第4步</strong>：点击「一键复制到公众号」，粘贴到公众号后台</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // ===== 6套高品质模板 =====
+        const templates = [
+            // 💎 高级模板
+            { id: 'premium-classic', name: '典雅经典', icon: '💎', category: 'premium',
+              style: 'classic', desc: '双线边框+印章标题+金色点缀' },
+            { id: 'premium-magazine', name: '期刊杂志', icon: '📰', category: 'premium',
+              style: 'magazine', desc: '首字下沉+侧栏高亮+编辑排版' },
+            { id: 'premium-card', name: '现代卡片', icon: '🃏', category: 'premium',
+              style: 'card', desc: '圆角卡片+图标徽章+阴影层次' },
+            { id: 'premium-chinese', name: '国潮中国风', icon: '🏮', category: 'premium',
+              style: 'chinese', desc: '水墨边框+红色印章+古典元素' },
+            { id: 'premium-minimal', name: '极简高端', icon: '✨', category: 'premium',
+              style: 'minimal', desc: '超大留白+细线分隔+优雅排版' },
+            { id: 'premium-dark', name: '深色商务', icon: '🌃', category: 'premium',
+              style: 'dark', desc: '深色头部+专业卡片+商务气质' },
+
+            // 政务公告类
+            { id: 'gov-red', name: '政务红', icon: '🏛️', category: 'official',
+              style: 'govRed', desc: '正式庄重，适合政务公告' },
+            { id: 'gov-blue', name: '政务蓝', icon: '📋', category: 'official',
+              style: 'govBlue', desc: '稳重大气，适合政策文件' },
+            { id: 'gov-green', name: '政务绿', icon: '🌿', category: 'official',
+              style: 'govGreen', desc: '清新便民，适合服务通知' },
+
+            // 招聘求职类
+            { id: 'recruit-energy', name: '活力橙', icon: '🔥', category: 'recruit',
+              style: 'recruitOrange', desc: '热情活力，适合招聘启事' },
+            { id: 'recruit-elegant', name: '典雅紫', icon: '✨', category: 'recruit',
+              style: 'recruitPurple', desc: '高端典雅，适合高端岗位' },
+            { id: 'recruit-fresh', name: '清新绿', icon: '🌱', category: 'recruit',
+              style: 'recruitGreen', desc: '清新活力，适合实习见习' },
+        ];
+
+        let currentTemplate = templates[0];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTemplates('all');
+            document.getElementById('markdownInput').addEventListener('input', updatePreview);
+            updatePreview();
+        });
+        
+        function renderTemplates(category) {
+            const grid = document.getElementById('templateGrid');
+            const filtered = category === 'all' ? templates : templates.filter(t => t.category === category);
+            grid.innerHTML = filtered.map(t => 
+                `<button class="template-btn ${t.id === currentTemplate.id ? 'active' : ''}" 
+                         onclick="selectTemplate('${t.id}')" title="${t.desc}"
+                         style="--btn-color: ${getTemplateColor(t)}">
+                    <div class="icon">${t.icon}</div>
+                    <div class="name">${t.name}</div>
+                    <div class="desc">${t.desc.substring(0,6)}</div>
+                </button>`
+            ).join('');
+        }
+        
+        function getTemplateColor(t) {
+            const colors = { classic:'#8B6914', magazine:'#C41E3A', card:'#2563EB', chinese:'#DC2626', minimal:'#333', dark:'#1E3A8A', govRed:'#C41E3A', govBlue:'#1E3A8A', govGreen:'#166534', recruitOrange:'#EA580C', recruitPurple:'#7C3AED', recruitGreen:'#059669' };
+            return colors[t.style] || '#667eea';
+        }
+        
+        function filterCategory(category, btn) {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            renderTemplates(category);
+        }
+        
+        function selectTemplate(id) {
+            currentTemplate = templates.find(t => t.id === id);
+            document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector('button[onclick*="' + id + '"]');
+            if (btn) btn.classList.add('active');
+            updatePreview();
+        }
+        
+        function parseMarkdown(md) {
+            let html = md;
+            // 先提取并保护代码块，避免被解析
+            const codeBlocks = [];
+            html = html.replace(/```([\s\S]*?)```/g, (m, code) => {
+                codeBlocks.push(code);
+                return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+            });
+            // 先提取并保护行内代码
+            const inlineCodes = [];
+            html = html.replace(/`([^`]+)`/g, (m, code) => {
+                inlineCodes.push(code);
+                return `__INLINE_CODE_${inlineCodes.length - 1}__`;
+            });
+            html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+            // 解析编号列表（1. 2. 3.）
+            html = html.replace(/^\d+\.\s+(.*$)/gm, '<li>$1</li>');
+            // 解析 - 列表项
+            html = html.replace(/^\- (.*$)/gm, '<li>$1</li>');
+            // 解析 • 列表项
+            html = html.replace(/^[•·◆◇★☆▶►]\s*(.*$)/gm, '<li>$1</li>');
+            // 将连续的 <li> 包裹在 <ul> 中
+            html = html.replace(/(<li>[\s\S]*?<\/li>(\n)?)+/g, '<ul>$&</ul>');
+            // 先将双换行转为段落分隔标记
+            html = html.replace(/\n\n/g, '</p><p>');
+            // 再将剩余单换行转为 <br>（这样行内换行也能保留）
+            html = html.replace(/\n/g, '<br>');
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            html = html.replace(/<p>\s*(<h[1-3]>)/g, '$1');
+            html = html.replace(/(<\/h[1-3]>)\s*<\/p>/g, '$1');
+            html = html.replace(/<p>\s*(<ul>)/g, '$1');
+            html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+            html = html.replace(/<p>\s*(<blockquote>)/g, '$1');
+            html = html.replace(/(<\/blockquote>)\s*<\/p>/g, '$1');
+            // 清理 h 标签和 li 标签内的多余 <br>
+            html = html.replace(/(<h[1-3][^>]*>)<br>/g, '$1');
+            html = html.replace(/<br>(<\/h[1-3]>)/g, '$1');
+            html = html.replace(/(<li[^>]*>)<br>/g, '$1');
+            html = html.replace(/<br>(<\/li>)/g, '$1');
+            // 恢复行内代码
+            html = html.replace(/__INLINE_CODE_(\d+)__/g, (m, i) => '<code>' + inlineCodes[parseInt(i)] + '</code>');
+            // 恢复代码块
+            html = html.replace(/__CODE_BLOCK_(\d+)__/g, (m, i) => '<pre>' + codeBlocks[parseInt(i)] + '</pre>');
+            return html;
+        }
+
+        // ===== 模板渲染引擎 =====
+        function renderClassic(html, t) {
+            // 典雅经典：双线边框 + 印章标题 + 金色点缀
+            let out = '<section style="font-family: SimSun,STSong,serif; color:#2c2c2c; line-height:2; font-size:15px; padding:8px;">';
+            // 双线顶部装饰
+            out += '<div style="border-top:3px double #8B6914; margin-bottom:16px;"></div>';
+            
+            // 标题 - 印章风格
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#8B6914; font-weight:bold; text-align:center; margin:20px 0 16px; padding:16px 12px; border:2px solid #8B6914; letter-spacing:2px;">$1</h1>');
+            
+            // 二级标题 - 左侧金色竖线+底部细线
+            html = html.replace(/<h2>(.*?)<h2>/gs, '<h2 style="font-size:16px; color:#5a4a2a; font-weight:bold; margin:20px 0 10px; padding:8px 0 8px 14px; border-left:3px solid #8B6914; border-bottom:1px solid #d4c5a0; background:linear-gradient(90deg,#faf6ee 0%,white 100%);">$1</h2>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#8B6914; font-weight:bold; margin:14px 0 8px;">◆ $1</h3>');
+            
+            // 加粗
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#8B6914; font-weight:bold;">$1</strong>');
+            
+            // 引用 - 古典卷轴风格
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:14px 18px; margin:14px 0; background:linear-gradient(135deg,#faf6ee,#f5ede0); color:#5a4a2a; border-radius:4px; font-style:normal; border-left:4px solid #8B6914; position:relative;"><span style="position:absolute; top:6px; right:12px; font-size:20px; color:#d4c5a0;">❝</span>$1</blockquote>');
+            
+            // 列表
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:24px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:8px; position:relative;"><span style="position:absolute; left:-16px; color:#8B6914; font-size:8px; top:4px;">◆</span>$1</li>');
+            
+            // 段落
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            
+            out += html;
+            out += '<div style="border-top:3px double #8B6914; margin-top:20px;"></div>';
+            out += '<p style="text-align:center; font-size:12px; color:#999; margin-top:8px;">— 完 —</p>';
+            out += '</section>';
+            return out;
+        }
+        
+        function renderMagazine(html, t) {
+            // 期刊杂志：首字下沉 + 侧栏高亮 + 编辑排版
+            let out = '<section style="font-family: Georgia, SimSun, serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            // 杂志顶部装饰线
+            out += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;"><div style="flex:1; height:3px; background:#C41E3A;"></div><div style="width:8px; height:8px; background:#C41E3A; transform:rotate(45deg);"></div><div style="flex:1; height:3px; background:#C41E3A;"></div></div>';
+            
+            // 标题 - 杂志大标题
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:22px; color:#1a1a1a; font-weight:bold; text-align:center; margin:16px 0 20px; line-height:1.4; letter-spacing:1px;">$1</h1>');
+            
+            // 二级标题 - 杂志分栏标题
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:17px; color:#C41E3A; font-weight:bold; margin:24px 0 12px; padding-bottom:8px; border-bottom:2px solid #C41E3A; text-transform:uppercase; letter-spacing:1px;">$1</h2>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:16px 0 8px; padding-left:10px; border-left:3px solid #ddd;">$1</h3>');
+            
+            // 加粗 - 杂志高亮
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#C41E3A; font-weight:bold; background:linear-gradient(180deg, transparent 60%, #ffe4e1 60%);">$1</strong>');
+            
+            // 引用 - 杂志 Pull Quote
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:16px 20px; margin:18px 0; background:#fafafa; color:#555; font-style:italic; font-size:16px; text-align:center; border-top:1px solid #ddd; border-bottom:1px solid #ddd; line-height:1.8;">$1</blockquote>');
+            
+            // 列表 - 杂志编号
+            html = html.replace(/<ul>/g, '<ul style="margin:12px 0; padding-left:0; list-style:none; counter-reset:mag;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:8px; padding:8px 12px; background:#fafafa; border-left:3px solid #C41E3A; counter-increment:mag;"><span style="color:#C41E3A; font-weight:bold; font-size:12px;">01</span> $1</li>');
+            
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px; text-indent:2em;">$1</p>');
+            
+            out += html;
+            // 杂志底部
+            out += '<div style="display:flex; align-items:center; gap:8px; margin-top:24px;"><div style="flex:1; height:1px; background:#ddd;"></div><span style="font-size:11px; color:#999; letter-spacing:2px;">END</span><div style="flex:1; height:1px; background:#ddd;"></div></div>';
+            out += '</section>';
+            return out;
+        }
+        
+        function renderCard(html, t) {
+            // 现代卡片：圆角卡片 + 图标徽章 + 阴影层次
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:1.9; font-size:15px; padding:4px; background:#f5f7fa; border-radius:8px;">';
+            
+            // 标题 - 卡片式
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<div style="background:linear-gradient(135deg,#2563EB,#1E40AF); border-radius:12px; padding:20px; margin:12px 0 16px; text-align:center;"><h1 style="font-size:20px; color:white; font-weight:700; margin:0; letter-spacing:1px;">$1</h1></div>');
+            
+            // 二级标题 - 带图标的卡片标题
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<div style="background:white; border-radius:10px; padding:12px 16px; margin:14px 0 10px; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; align-items:center; gap:10px;"><div style="width:4px; height:24px; background:linear-gradient(180deg,#2563EB,#60A5FA); border-radius:2px; flex-shrink:0;"></div><h2 style="font-size:16px; color:#1a1a1a; font-weight:700; margin:0;">$1</h2></div>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#2563EB; font-weight:600; margin:14px 0 8px;">▎$1</h3>');
+            
+            // 加粗
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#2563EB; font-weight:700;">$1</strong>');
+            
+            // 引用 - 卡片引用
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<div style="background:white; border-radius:10px; padding:14px 16px; margin:14px 0; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #60A5FA;"><blockquote style="border:none; padding:0; margin:0; color:#555; font-style:normal; font-size:14px;">💡 $1</blockquote></div>');
+            
+            // 列表 - 卡片列表
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding:0; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding:10px 14px; background:white; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.04);"><span style="color:#2563EB; margin-right:6px;">●</span>$1</li>');
+            
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px; padding:0 4px;">$1</p>');
+            
+            out += html;
+            out += '</section>';
+            return out;
+        }
+
+        function renderChinese(html, t) {
+            // 国潮中国风：水墨边框 + 红色印章 + 古典元素
+            let out = '<section style="font-family: SimSun,STSong,serif; color:#2c2c2c; line-height:2.1; font-size:15px; padding:12px; background:linear-gradient(180deg,#fffbf5,#fff8f0);">';
+            // 古典顶部花纹
+            out += '<div style="text-align:center; margin-bottom:12px; color:#DC2626; font-size:18px; letter-spacing:8px;">◆ ◇ ◆ ◇ ◆</div>';
+            
+            // 标题 - 古典牌匾
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#8B0000; font-weight:bold; text-align:center; margin:16px 0; padding:12px; border:2px solid #8B0000; letter-spacing:2px;">$1</h1>');
+            
+            // 二级标题 - 印章风格
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#8B0000; font-weight:bold; margin:20px 0 10px; padding:6px 14px; background:linear-gradient(90deg,#fff0f0,transparent); border-left:4px solid #DC2626;">$1</h2>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#8B0000; font-weight:bold; margin:14px 0 8px;">【$1】</h3>');
+            
+            // 加粗
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#DC2626; font-weight:bold;">$1</strong>');
+            
+            // 引用 - 古风
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:14px 18px; margin:14px 0; background:linear-gradient(135deg,#fff8f0,#fff0e8); color:#5a3a2a; border-radius:4px; font-style:normal; border:1px solid #f0d0b0; position:relative;"><span style="position:absolute; top:4px; right:10px; font-size:24px; color:#DC2626; opacity:0.15;">印</span>$1</blockquote>');
+            
+            // 列表
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:12px; position:relative;"><span style="position:absolute; left:-4px; color:#DC2626;">▎</span>$1</li>');
+            
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            
+            out += html;
+            out += '<div style="text-align:center; margin-top:20px; color:#DC2626; font-size:18px; letter-spacing:8px;">◆ ◇ ◆ ◇ ◆</div>';
+            out += '</section>';
+            return out;
+        }
+        
+        function renderMinimal(html, t) {
+            // 极简高端：超大留白 + 细线分隔 + 优雅排版
+            let out = '<section style="font-family: -apple-system, PingFang SC, Helvetica Neue, sans-serif; color:#333; line-height:2.2; font-size:15px; padding:16px 12px; letter-spacing:0.3px;">';
+            // 极简细线
+            out += '<div style="width:40px; height:1px; background:#333; margin:0 auto 24px;"></div>';
+            
+            // 标题 - 极简大字
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:22px; color:#1a1a1a; font-weight:300; text-align:center; margin:20px 0 28px; letter-spacing:4px; line-height:1.5;">$1</h1>');
+            
+            // 二级标题 - 细线+大写
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:15px; color:#999; font-weight:400; margin:28px 0 12px; padding-bottom:8px; border-bottom:1px solid #e0e0e0; letter-spacing:2px;">$1</h2>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:600; margin:20px 0 8px;">$1</h3>');
+            
+            // 加粗 - 极简高亮
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#1a1a1a; font-weight:600; border-bottom:1px solid #333; padding-bottom:1px;">$1</strong>');
+            
+            // 引用 - 极简
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:16px 0 16px 16px; margin:18px 0; border-left:1px solid #ccc; color:#666; font-style:normal; font-size:14px;">$1</blockquote>');
+            
+            // 列表 - 极简
+            html = html.replace(/<ul>/g, '<ul style="margin:12px 0; padding-left:0; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:8px; padding-left:16px; position:relative; color:#555;"><span style="position:absolute; left:0; color:#ccc;">—</span>$1</li>');
+            
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:12px;">$1</p>');
+            
+            out += html;
+            out += '<div style="width:40px; height:1px; background:#333; margin:28px auto 0;"></div>';
+            out += '</section>';
+            return out;
+        }
+        
+        function renderDark(html, t) {
+            // 深色商务：深色头部 + 专业卡片 + 商务气质
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:1.9; font-size:15px;">';
+            // 深色头部预留（由h1填充）
+            
+            // 标题 - 深色横幅
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e); padding:24px 20px; text-align:center; margin:0 0 20px;"><h1 style="font-size:20px; color:white; font-weight:700; margin:0; letter-spacing:1px;">$1</h1><div style="width:40px; height:2px; background:#4facfe; margin:10px auto 0;"></div></div>');
+            
+            // 二级标题 - 深色卡片标题
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<div style="margin:16px 0 10px; padding:10px 16px; background:linear-gradient(90deg,#1a1a2e,#16213e); border-radius:6px 20px 20px 6px;"><h2 style="font-size:15px; color:white; font-weight:600; margin:0;">$1</h2></div>');
+            
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#1a1a2e; font-weight:700; margin:14px 0 8px; padding-left:10px; border-left:3px solid #4facfe;">$1</h3>');
+            
+            // 加粗
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#4facfe; font-weight:700;">$1</strong>');
+            
+            // 引用 - 商务卡片
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<div style="background:#f8f9fa; border-radius:8px; padding:14px 16px; margin:14px 0; border-left:3px solid #4facfe;"><blockquote style="border:none; padding:0; margin:0; color:#555; font-style:normal; font-size:14px;">$1</blockquote></div>');
+            
+            // 列表
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:0; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding:8px 12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #4facfe;"><span style="color:#4facfe; font-size:12px; font-weight:700; margin-right:6px;">▸</span>$1</li>');
+            
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px; padding:0 8px;">$1</p>');
+            
+            out += html;
+            // 深色底部
+            out += '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e); padding:12px 20px; text-align:center; margin-top:16px;"><p style="color:rgba(255,255,255,0.5); font-size:11px; margin:0; letter-spacing:1px;">— END —</p></div>';
+            out += '</section>';
+            return out;
+        }
+
+        function renderGovRed(html, t) {
+            let out = '<section style="font-family: SimSun,STSong,serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#C41E3A; font-weight:bold; text-align:center; margin:16px 0 14px; padding-bottom:10px; border-bottom:2px solid #C41E3A;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#C41E3A; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #C41E3A; background:#FFF5F5; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#C41E3A; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #C41E3A; padding:12px 16px; margin:14px 0; background:#FFF5F5; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#C41E3A;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '<div style="border-top:2px solid #C41E3A; margin-top:16px;"></div>';
+            out += '</section>';
+            return out;
+        }
+        
+        function renderGovBlue(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#1E3A8A; font-weight:bold; text-align:center; margin:16px 0 14px;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#1E3A8A; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #1E3A8A; background:#EFF6FF; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#1E3A8A; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #1E3A8A; padding:12px 16px; margin:14px 0; background:#EFF6FF; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#1E3A8A;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '</section>';
+            return out;
+        }
+        
+        function renderGovGreen(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#166534; font-weight:bold; text-align:center; margin:16px 0 14px;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#166534; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #166534; background:#F0FDF4; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#166534; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #166534; padding:12px 16px; margin:14px 0; background:#F0FDF4; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#166534;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '</section>';
+            return out;
+        }
+        
+        function renderRecruitOrange(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#EA580C; font-weight:bold; text-align:center; margin:16px 0 14px;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#EA580C; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #EA580C; background:#FFF7ED; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#EA580C; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #EA580C; padding:12px 16px; margin:14px 0; background:#FFF7ED; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#EA580C;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '</section>';
+            return out;
+        }
+        
+        function renderRecruitPurple(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#7C3AED; font-weight:bold; text-align:center; margin:16px 0 14px;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#7C3AED; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #7C3AED; background:#F5F3FF; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#7C3AED; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #7C3AED; padding:12px 16px; margin:14px 0; background:#F5F3FF; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#7C3AED;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '</section>';
+            return out;
+        }
+        
+        function renderRecruitGreen(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:8px;">';
+            
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:20px; color:#059669; font-weight:bold; text-align:center; margin:16px 0 14px;">$1</h1>');
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#059669; font-weight:bold; margin:18px 0 10px; padding:6px 12px; border-left:4px solid #059669; background:#ECFDF5; border-radius:0 6px 6px 0;">$1</h2>');
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#333; font-weight:bold; margin:14px 0 8px;">▎$1</h3>');
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#059669; font-weight:bold;">$1</strong>');
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border-left:4px solid #059669; padding:12px 16px; margin:14px 0; background:#ECFDF5; color:#333; border-radius:0 8px 8px 0; font-style:normal;">$1</blockquote>');
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding-left:16px; position:relative;"><span style="position:absolute; left:0; color:#059669;">●</span>$1</li>');
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+            out += html;
+            out += '</section>';
+            return out;
+        }
+        
+        // ===== 主渲染函数：分发到对应模板 =====
+        const renderers = {
+            classic: renderClassic, magazine: renderMagazine, card: renderCard,
+            chinese: renderChinese, minimal: renderMinimal, dark: renderDark,
+            govRed: renderGovRed, govBlue: renderGovBlue, govGreen: renderGovGreen,
+            recruitOrange: renderRecruitOrange, recruitPurple: renderRecruitPurple, recruitGreen: renderRecruitGreen,
+        };
+        
+        function updatePreview() {
+            const input = document.getElementById('markdownInput').value;
+            const preview = document.getElementById('previewContent');
+            const t = currentTemplate;
+            let html = parseMarkdown(input);
+            const renderer = renderers[t.style] || renderers.classic;
+            preview.innerHTML = renderer(html, t);
+        }
+        
+        // ===== 复制功能 =====
+        async function copyContent() {
+            const preview = document.getElementById('previewContent');
+            const html = preview.innerHTML;
+            const fullHtml = '<section style="font-family: -apple-system, PingFang SC, SimSun, STSong, serif; color: #1a1a1a; line-height: 2; font-size: 15px; max-width: 100%;">' + html + '</section>';
+            
+            try {
+                const blob = new Blob([fullHtml], { type: 'text/html' });
+                const textBlob = new Blob([preview.innerText], { type: 'text/plain' });
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob })
+                ]);
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✅ 已复制';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 一键复制到公众号'; btn.classList.remove('copied'); }, 2000);
+            } catch (err) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = fullHtml;
+                tempDiv.style.position = 'fixed';
+                tempDiv.style.left = '-9999px';
+                document.body.appendChild(tempDiv);
+                const range = document.createRange();
+                range.selectNodeContents(tempDiv);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(tempDiv);
+                selection.removeAllRanges();
+            }
+        }
+    </script>
+</body>
+</html>
