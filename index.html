@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>公众号排版工具</title>
+    <title>公众号排版工具 v3 - 17模板</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -45,6 +45,9 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
+        }
+        @media (min-width: 600px) {
+            .template-grid { grid-template-columns: repeat(4, 1fr); }
         }
         .template-btn {
             padding: 12px 8px;
@@ -193,7 +196,7 @@
     <div class="container">
         <div class="header">
             <h1>📝 公众号排版工具</h1>
-            <p>选择模板 · 粘贴内容 · 一键复制</p>
+            <p>太原事编通 - 选择模板 · 粘贴内容 · 一键复制</p>
         </div>
         
         <div class="template-section">
@@ -264,6 +267,18 @@
               style: 'recruitPurple', desc: '高端典雅，适合高端岗位' },
             { id: 'recruit-fresh', name: '清新绿', icon: '🌱', category: 'recruit',
               style: 'recruitGreen', desc: '清新活力，适合实习见习' },
+
+            // 🆕 md2wechat 风格主题
+            { id: 'new-nyt', name: '纽约时报', icon: '📰', category: 'premium',
+              style: 'nyt', desc: '衬线字体+精致排版+权威感' },
+            { id: 'new-elegant-gold', name: '金色优雅', icon: '👑', category: 'premium',
+              style: 'elegantGold', desc: '金色点缀+优雅留白+高端气质' },
+            { id: 'new-focus', name: '居中对称', icon: '🎯', category: 'premium',
+              style: 'focus', desc: '居中布局+双线标题+平衡和谐' },
+            { id: 'new-tech', name: '科技极简', icon: '⚡', category: 'premium',
+              style: 'tech', desc: '等宽字体+代码风格+现代感' },
+            { id: 'new-warm', name: '暖色长文', icon: '☕', category: 'premium',
+              style: 'warm', desc: '暖色调+舒适阅读+长文优化' },
         ];
 
         let currentTemplate = templates[0];
@@ -271,7 +286,39 @@
         document.addEventListener('DOMContentLoaded', function() {
             renderTemplates('all');
             document.getElementById('markdownInput').addEventListener('input', updatePreview);
+            
+            // URL parameter auto-fill support
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('t')) {
+                const templateId = params.get('t');
+                const found = templates.find(t => t.id === templateId || t.style === templateId);
+                if (found) {
+                    currentTemplate = found;
+                    renderTemplates('all');
+                }
+            }
+            if (params.has('c')) {
+                try {
+                    const decoded = decodeURIComponent(escape(atob(params.get('c'))));
+                    document.getElementById('markdownInput').value = decoded;
+                } catch(e) {
+                    // Try direct base64 decode for ASCII-safe content
+                    try {
+                        document.getElementById('markdownInput').value = atob(params.get('c'));
+                    } catch(e2) {
+                        console.error('Invalid content parameter');
+                    }
+                }
+            }
             updatePreview();
+            
+            // Auto-scroll to copy button if s=1
+            if (params.get('s') === '1') {
+                setTimeout(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 500);
+            }
         });
         
         function renderTemplates(category) {
@@ -655,12 +702,191 @@
             return out;
         }
         
+        // 🆕 纽约时报风格 — 衬线字体+精致排版+权威感
+        function renderNyt(html, t) {
+            let out = '<section style="font-family: Georgia, \"Noto Serif SC\", SimSun, serif; color:#1a1a1a; line-height:2; font-size:16px; padding:12px 8px; max-width:100%;">';
+            // NYT顶部装饰线
+            out += '<div style="border-top:3px solid #1a1a1a; margin-bottom:4px;"></div>';
+            out += '<div style="border-top:1px solid #1a1a1a; margin-bottom:20px;"></div>';
+
+            // 标题 — NYT大标题
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:26px; color:#1a1a1a; font-weight:900; text-align:center; margin:20px 0 16px; line-height:1.3; letter-spacing:-0.5px; font-family: Georgia, \"Noto Serif SC\", serif;">$1</h1>');
+
+            // 二级标题 — 带底线
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:18px; color:#1a1a1a; font-weight:700; margin:28px 0 12px; padding-bottom:6px; border-bottom:1px solid #e0e0e0; font-family: Georgia, \"Noto Serif SC\", serif;">$1</h2>');
+
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:16px; color:#333; font-weight:700; margin:20px 0 8px; font-style:italic;">$1</h3>');
+
+            // 加粗 — 斜体高亮
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#1a1a1a; font-weight:700;">$1</strong>');
+
+            // 引用 — NYT Pull Quote
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:20px 24px; margin:24px 0; border-left:3px solid #1a1a1a; background:#fafafa; color:#333; font-style:italic; font-size:18px; line-height:1.8; text-align:center;">$1</blockquote>');
+
+            // 列表 — NYT编号
+            html = html.replace(/<ul>/g, '<ul style="margin:14px 0; padding-left:0; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:10px; padding:10px 14px; border-bottom:1px solid #f0f0f0; line-height:1.7;">• $1</li>');
+
+            // 段落 — 首行缩进
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:14px; text-indent:2em; line-height:2;">$1</p>');
+
+            out += html;
+            // NYT底部
+            out += '<div style="border-top:1px solid #1a1a1a; margin-top:24px;"></div>';
+            out += '<div style="border-top:3px solid #1a1a1a; margin-top:4px;"></div>';
+            out += '</section>';
+            return out;
+        }
+
+        // 🆕 金色优雅 — 金色点缀+优雅留白+高端气质
+        function renderElegantGold(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, \"Noto Serif SC\", serif; color:#2c2c2c; line-height:2.1; font-size:15px; padding:16px 12px; background:linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);">';
+            // 顶部金色装饰
+            out += '<div style="text-align:center; margin-bottom:20px;"><span style="display:inline-block; width:60px; height:1px; background:linear-gradient(90deg, transparent, #b8860b, transparent); vertical-align:middle;"></span><span style="display:inline-block; width:8px; height:8px; background:#b8860b; transform:rotate(45deg); margin:0 12px; vertical-align:middle;"></span><span style="display:inline-block; width:60px; height:1px; background:linear-gradient(90deg, transparent, #b8860b, transparent); vertical-align:middle;"></span></div>';
+
+            // 标题 — 金色衬线
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:22px; color:#8B6914; font-weight:700; text-align:center; margin:20px 0 24px; letter-spacing:3px; font-family: Georgia, serif; position:relative;"><span style="position:relative; z-index:1;">$1</span><div style="position:absolute; bottom:-4px; left:50%; transform:translateX(-50%); width:40px; height:2px; background:#b8860b;"></div></h1>');
+
+            // 二级标题 — 金色左线
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:17px; color:#8B6914; font-weight:600; margin:24px 0 12px; padding:8px 16px; border-left:3px solid #b8860b; background:linear-gradient(90deg, #faf6ee 0%, transparent 100%);">$1</h2>');
+
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#8B6914; font-weight:600; margin:18px 0 8px;">✦ $1</h3>');
+
+            // 加粗 — 金色高亮
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#8B6914; font-weight:700; background:linear-gradient(180deg, transparent 65%, #faf0d0 65%); padding:0 2px;">$1</strong>');
+
+            // 引用 — 金色边框
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:16px 20px; margin:18px 0; background:linear-gradient(135deg, #faf6ee, #f5ede0); color:#5a4a2a; border-radius:4px; font-style:normal; border-left:3px solid #b8860b; position:relative;"><span style="position:absolute; top:8px; right:12px; font-size:18px; color:#d4c5a0; font-family:Georgia,serif;">❝</span>$1</blockquote>');
+
+            // 列表 — 金色菱形
+            html = html.replace(/<ul>/g, '<ul style="margin:12px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:8px; padding-left:12px; position:relative;"><span style="position:absolute; left:-16px; color:#b8860b; font-size:8px; top:6px;">◆</span>$1</li>');
+
+            // 段落
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:12px;">$1</p>');
+
+            out += html;
+            // 底部金色装饰
+            out += '<div style="text-align:center; margin-top:24px;"><span style="display:inline-block; width:40px; height:1px; background:linear-gradient(90deg, transparent, #b8860b, transparent); vertical-align:middle;"></span><span style="display:inline-block; width:6px; height:6px; background:#b8860b; transform:rotate(45deg); margin:0 10px; vertical-align:middle;"></span><span style="display:inline-block; width:40px; height:1px; background:linear-gradient(90deg, transparent, #b8860b, transparent); vertical-align:middle;"></span></div>';
+            out += '</section>';
+            return out;
+        }
+
+        // 🆕 居中对称 — 标题上下双横线+平衡布局
+        function renderFocus(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, sans-serif; color:#333; line-height:2; font-size:15px; padding:12px 8px; text-align:center;">';
+            // 顶部细线
+            out += '<div style="width:50px; height:2px; background:#333; margin:0 auto 24px;"></div>';
+
+            // 标题 — 上下双横线
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<div style="margin:20px auto 24px; max-width:90%;"><div style="height:1px; background:#333; margin-bottom:12px;"></div><h1 style="font-size:20px; color:#1a1a1a; font-weight:700; margin:0; letter-spacing:2px;">$1</h1><div style="height:1px; background:#333; margin-top:12px;"></div></div>');
+
+            // 二级标题 — 居中+下划线
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#1a1a1a; font-weight:600; margin:28px 0 12px; padding-bottom:8px; border-bottom:1px solid #ddd; display:inline-block; letter-spacing:1px;">$1</h2>');
+
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#555; font-weight:600; margin:20px 0 8px; text-align:left;">$1</h3>');
+
+            // 加粗 — 下划线
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#1a1a1a; font-weight:700; border-bottom:1px solid #333; padding-bottom:1px;">$1</strong>');
+
+            // 引用 — 居中细线
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:16px 20px; margin:20px auto; max-width:90%; border-top:1px solid #ccc; border-bottom:1px solid #ccc; color:#666; font-style:italic; font-size:15px; text-align:center; line-height:1.9;">$1</blockquote>');
+
+            // 列表 — 居中点
+            html = html.replace(/<ul>/g, '<ul style="margin:14px auto; padding-left:0; list-style:none; text-align:left; max-width:90%;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:8px; padding-left:20px; position:relative;"><span style="position:absolute; left:0; color:#999;">○</span>$1</li>');
+
+            // 段落 — 左对齐
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:12px; text-align:left;">$1</p>');
+
+            out += html;
+            // 底部细线
+            out += '<div style="width:50px; height:2px; background:#333; margin:24px auto 0;"></div>';
+            out += '</section>';
+            return out;
+        }
+
+        // 🆕 科技极简 — 等宽字体+代码风格+现代感
+        function renderTech(html, t) {
+            let out = '<section style="font-family: -apple-system, \"SF Mono\", \"Fira Code\", monospace, PingFang SC, sans-serif; color:#24292e; line-height:1.9; font-size:14px; padding:12px 8px; background:#ffffff;">';
+            // 顶部代码注释风格
+            out += '<div style="color:#6a737d; font-size:12px; margin-bottom:16px; font-family: monospace;">// article.md</div>';
+
+            // 标题 — 等宽大字
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:22px; color:#0366d6; font-weight:700; margin:16px 0 20px; font-family: monospace; letter-spacing:-0.5px; border-bottom:2px solid #0366d6; padding-bottom:10px;">$1</h1>');
+
+            // 二级标题 — 方括号标签
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:16px; color:#0366d6; font-weight:600; margin:24px 0 10px; font-family: monospace;"><span style="background:#f1f8ff; padding:4px 10px; border-radius:4px; border:1px solid #c8e1ff;">$1</span></h2>');
+
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:14px; color:#24292e; font-weight:600; margin:18px 0 8px; font-family: monospace;">▸ $1</h3>');
+
+            // 加粗 — 蓝色
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#0366d6; font-weight:700;">$1</strong>');
+
+            // 引用 — 代码块风格
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:12px 16px; margin:14px 0; background:#f6f8fa; color:#24292e; border-radius:6px; font-style:normal; font-family: monospace; font-size:13px; border-left:3px solid #0366d6;">$1</blockquote>');
+
+            // 列表 — 箭头
+            html = html.replace(/<ul>/g, '<ul style="margin:10px 0; padding-left:0; list-style:none; font-family: monospace;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:6px; padding:6px 10px; background:#f6f8fa; border-radius:4px;"><span style="color:#0366d6;">→</span> $1</li>');
+
+            // 段落
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:10px;">$1</p>');
+
+            out += html;
+            // 底部代码注释
+            out += '<div style="border-top:1px solid #e1e4e8; margin-top:20px; padding-top:12px; color:#6a737d; font-size:12px; font-family: monospace;">// end of file</div>';
+            out += '</section>';
+            return out;
+        }
+
+        // 🆕 暖色长文 — 暖色调+舒适阅读+长文优化
+        function renderWarm(html, t) {
+            let out = '<section style="font-family: -apple-system, PingFang SC, \"Noto Serif SC\", Georgia, serif; color:#3d3229; line-height:2.2; font-size:16px; padding:16px 12px; background:#fdf8f3;">';
+            // 顶部暖色装饰
+            out += '<div style="text-align:center; margin-bottom:16px; color:#c9a882; font-size:14px; letter-spacing:6px;">— ◆ —</div>';
+
+            // 标题 — 暖棕大字
+            html = html.replace(/<h1>(.*?)<\/h1>/gs, '<h1 style="font-size:22px; color:#5a3e28; font-weight:700; text-align:center; margin:20px 0 24px; line-height:1.5; letter-spacing:1px; font-family: Georgia, serif;">$1</h1>');
+
+            // 二级标题 — 暖色左侧条
+            html = html.replace(/<h2>(.*?)<\/h2>/gs, '<h2 style="font-size:17px; color:#5a3e28; font-weight:600; margin:28px 0 12px; padding:6px 14px; border-left:4px solid #c9a882; background:linear-gradient(90deg, #faf3e8 0%, transparent 100%); border-radius:0 4px 4px 0;">$1</h2>');
+
+            // 三级标题
+            html = html.replace(/<h3>(.*?)<\/h3>/gs, '<h3 style="font-size:15px; color:#8b6914; font-weight:600; margin:20px 0 8px;">☕ $1</h3>');
+
+            // 加粗 — 暖色高亮
+            html = html.replace(/<strong>(.*?)<\/strong>/gs, '<strong style="color:#5a3e28; font-weight:700; background:linear-gradient(180deg, transparent 60%, #f5e6cc 60%); padding:0 3px;">$1</strong>');
+
+            // 引用 — 暖色卡片
+            html = html.replace(/<blockquote>(.*?)<\/blockquote>/gs, '<blockquote style="border:none; padding:16px 20px; margin:18px 0; background:white; color:#5a3e28; border-radius:8px; font-style:normal; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:3px solid #c9a882; line-height:1.9;">$1</blockquote>');
+
+            // 列表 — 暖色圆点
+            html = html.replace(/<ul>/g, '<ul style="margin:12px 0; padding-left:20px; list-style:none;">');
+            html = html.replace(/<li>(.*?)<\/li>/gs, '<li style="margin-bottom:8px; padding-left:12px; position:relative; line-height:1.9;"><span style="position:absolute; left:-16px; color:#c9a882; font-size:10px; top:4px;">●</span>$1</li>');
+
+            // 段落
+            html = html.replace(/<p>(.*?)<\/p>/gs, '<p style="margin-bottom:14px;">$1</p>');
+
+            out += html;
+            // 底部暖色装饰
+            out += '<div style="text-align:center; margin-top:24px; color:#c9a882; font-size:14px; letter-spacing:6px;">— ◆ —</div>';
+            out += '</section>';
+            return out;
+        }
+
         // ===== 主渲染函数：分发到对应模板 =====
         const renderers = {
             classic: renderClassic, magazine: renderMagazine, card: renderCard,
             chinese: renderChinese, minimal: renderMinimal, dark: renderDark,
             govRed: renderGovRed, govBlue: renderGovBlue, govGreen: renderGovGreen,
             recruitOrange: renderRecruitOrange, recruitPurple: renderRecruitPurple, recruitGreen: renderRecruitGreen,
+            nyt: renderNyt, elegantGold: renderElegantGold, focus: renderFocus,
+            tech: renderTech, warm: renderWarm,
         };
         
         function updatePreview() {
